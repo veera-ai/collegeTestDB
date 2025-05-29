@@ -8,7 +8,8 @@ from app.api.v1.endpoints import (
     records,
     content,
     registration,
-    monitoring
+    monitoring,
+    import_data
 )
 
 api_router = APIRouter()
@@ -21,3 +22,4 @@ api_router.include_router(records.router, prefix="/records", tags=["records"])
 api_router.include_router(content.router, prefix="/content", tags=["content"])
 api_router.include_router(registration.router, prefix="/registration", tags=["registration"])
 api_router.include_router(monitoring.router, prefix="/monitoring", tags=["monitoring"])
+api_router.include_router(import_data.router, prefix="/import", tags=["import"])
