@@ -1,7 +1,8 @@
 """Dependencies for API endpoints."""
 from typing import Generator, Optional
+from uuid import uuid4
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
@@ -14,6 +15,18 @@ from app.models.user import User, UserRole
 from app.schemas.user import UserInDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+
+# PUBLIC_INTERFACE
+def get_request_id() -> str:
+    """Generate a unique request ID."""
+    return str(uuid4())
+
+# PUBLIC_INTERFACE
+def get_request(request: Request) -> Request:
+    """Get the current request."""
+    if not hasattr(request.state, "request_id"):
+        request.state.request_id = get_request_id()
+    return request
 
 # PUBLIC_INTERFACE
 def get_db() -> Generator:
