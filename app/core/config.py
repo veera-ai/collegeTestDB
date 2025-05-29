@@ -31,6 +31,19 @@ class Settings(BaseSettings):
     DB_PASS: Optional[str] = None
     DB_NAME: Optional[str] = None
     
+    # Database SSL Configuration
+    DB_USE_SSL: bool = False
+    DB_SSL_MODE: str = "verify-full"  # Options: disable, allow, prefer, require, verify-ca, verify-full
+    DB_SSL_CERT: Optional[str] = None  # Path to client certificate
+    DB_SSL_KEY: Optional[str] = None   # Path to client key
+    DB_SSL_ROOT_CERT: Optional[str] = None  # Path to root certificate
+    
+    # Database Pool Configuration
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800  # 30 minutes
+    
     # Legacy variables (maintained for backward compatibility)
     POSTGRES_SERVER: Optional[str] = None
     POSTGRES_USER: Optional[str] = None
@@ -67,7 +80,8 @@ class Settings(BaseSettings):
         # Get port from DB_PORT (defaults to 5432 if not specified)
         port = str(values.get("DB_PORT", 5432))
         
-        return PostgresDsn.build(
+        # Build DSN
+        dsn = PostgresDsn.build(
             scheme="postgresql",
             user=user,
             password=password,
@@ -75,6 +89,25 @@ class Settings(BaseSettings):
             port=port,
             path=f"/{db_name}",
         )
+
+        # Add SSL options if enabled
+        if values.get("DB_USE_SSL"):
+            ssl_mode = values.get("DB_SSL_MODE", "verify-full")
+            query_params = [f"sslmode={ssl_mode}"]
+            
+            # Add SSL certificate paths if provided
+            if values.get("DB_SSL_CERT"):
+                query_params.append(f"sslcert={values['DB_SSL_CERT']}")
+            if values.get("DB_SSL_KEY"):
+                query_params.append(f"sslkey={values['DB_SSL_KEY']}")
+            if values.get("DB_SSL_ROOT_CERT"):
+                query_params.append(f"sslrootcert={values['DB_SSL_ROOT_CERT']}")
+            
+            # Append query parameters to DSN
+            if query_params:
+                dsn = f"{dsn}?{'&'.join(query_params)}"
+        
+        return dsn
 
     class Config:
         case_sensitive = True
