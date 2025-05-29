@@ -24,7 +24,7 @@ from app.schemas.academic import StudentCreate, StaffCreate
 from app.schemas.records import EnrollmentCreate, GradeCreate, AttendanceCreate
 from app.schemas.content import NewsCreate, EventCreate
 from app.schemas.registration import RegistrationCreate
-from app.schemas.monitoring import DashboardCreate, ReportCreate
+from app.schemas.monitoring import DashboardCreate
 
 # Import all relevant models
 from app.models.user import User
@@ -48,7 +48,6 @@ ENTITY_MAPPINGS = {
     EntityType.EVENT: (EventCreate, Event),
     EntityType.REGISTRATION: (RegistrationCreate, Registration),
     EntityType.DASHBOARD: (DashboardCreate, Dashboard),
-    EntityType.REPORT: (ReportCreate, Report),
 }
 
 # PUBLIC_INTERFACE

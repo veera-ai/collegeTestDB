@@ -65,11 +65,11 @@ router = APIRouter()
     }
 )
 def get_users(
+    request: Request,
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of records to return"),
     current_user: User = Depends(get_current_active_superuser),
-    request: Request = Depends(get_request),
 ) -> Any:
     """
     Retrieve a list of users.

@@ -31,11 +31,11 @@ router = APIRouter()
 # PUBLIC_INTERFACE
 @router.get("/grades/", response_model=List[GradeSchema])
 def get_grades(
+    request: Request,
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(check_user_role(UserRole.STAFF)),
-    request: Request = Depends(get_request),
 ) -> Any:
     """Get list of grades."""
     grades = db.query(Grade).offset(skip).limit(limit).all()
@@ -56,11 +56,10 @@ def get_grades(
 # PUBLIC_INTERFACE
 @router.post("/grades/", response_model=GradeSchema)
 def create_grade(
-    *,
-    db: Session = Depends(get_db),
+    request: Request,
     grade_in: GradeCreate,
+    db: Session = Depends(get_db),
     current_user: User = Depends(check_user_role(UserRole.STAFF)),
-    request: Request = Depends(get_request),
 ) -> Any:
     """Create new grade."""
     # Verify enrollment exists and belongs to student
@@ -96,12 +95,11 @@ def create_grade(
 # PUBLIC_INTERFACE
 @router.put("/grades/{grade_id}", response_model=GradeSchema)
 def update_grade(
-    *,
-    db: Session = Depends(get_db),
+    request: Request,
     grade_id: str,
     grade_in: GradeUpdate,
+    db: Session = Depends(get_db),
     current_user: User = Depends(check_user_role(UserRole.STAFF)),
-    request: Request = Depends(get_request),
 ) -> Any:
     """Update grade."""
     grade = db.query(Grade).filter(Grade.id == grade_id).first()
@@ -139,11 +137,10 @@ def update_grade(
 # PUBLIC_INTERFACE
 @router.delete("/grades/{grade_id}", response_model=GradeSchema)
 def delete_grade(
-    *,
-    db: Session = Depends(get_db),
+    request: Request,
     grade_id: str,
+    db: Session = Depends(get_db),
     current_user: User = Depends(check_user_role(UserRole.STAFF)),
-    request: Request = Depends(get_request),
 ) -> Any:
     """Delete grade."""
     grade = db.query(Grade).filter(Grade.id == grade_id).first()

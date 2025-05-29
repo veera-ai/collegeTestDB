@@ -58,9 +58,9 @@ router = APIRouter()
     }
 )
 def login(
+    request: Request,
     db: Session = Depends(get_db),
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    request: Request = Depends(get_request)
+    form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     """
     OAuth2 compatible token login.
@@ -180,8 +180,8 @@ def login(
     }
 )
 def test_token(
+    request: Request,
     current_user: User = Depends(get_current_user),
-    request: Request = Depends(get_request),
     db: Session = Depends(get_db)
 ) -> Any:
     """

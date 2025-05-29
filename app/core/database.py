@@ -90,8 +90,3 @@ def get_db() -> Generator[Session, None, None]:
 def receive_connect(dbapi_connection, connection_record):
     """Log when a connection is created."""
     print("New database connection established")
-
-@event.listens_for(engine, "engine_disconnect")
-def receive_disconnect(dbapi_connection, connection_record):
-    """Log when a connection is destroyed."""
-    print("Database connection closed")
