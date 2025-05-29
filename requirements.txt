@@ -1,0 +1,12 @@
+fastapi==0.115.7
+uvicorn==0.34.0
+sqlalchemy==2.0.37
+pydantic==2.10.6
+python-jose[cryptography]==3.3.0  # For JWT
+passlib[bcrypt]==1.7.4  # For password hashing
+python-multipart==0.0.9  # For form data
+alembic==1.13.1  # For database migrations
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+python-dotenv==1.0.1  # For environment variables
+emails==0.6  # For email functionality
+tenacity==8.2.3  # For retrying operations
