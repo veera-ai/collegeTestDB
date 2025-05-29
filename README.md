@@ -26,7 +26,7 @@ This is the main monolithic application container for the College Portal, provid
 ## Prerequisites
 
 - Python 3.8+
-- PostgreSQL 12+
+- MySQL 8.0+
 - Virtual environment tool (venv or conda)
 
 ## Setup
@@ -74,12 +74,13 @@ BACKEND_CORS_ORIGINS="http://localhost,http://localhost:8080,http://localhost:30
 
 4. Database Setup:
    
-   a. Create the PostgreSQL database:
+   a. Create the MySQL database:
    ```bash
-   psql -U postgres
+   mysql -u root -p
    CREATE DATABASE college_portal;
-   CREATE USER your_db_user WITH PASSWORD 'your_db_password';
-   GRANT ALL PRIVILEGES ON DATABASE college_portal TO your_db_user;
+   CREATE USER 'your_db_user'@'localhost' IDENTIFIED BY 'your_db_password';
+   GRANT ALL PRIVILEGES ON college_portal.* TO 'your_db_user'@'localhost';
+   FLUSH PRIVILEGES;
    ```
 
    b. The application will automatically create the necessary tables on first run.
