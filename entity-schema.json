@@ -1,0 +1,206 @@
+{
+  "entities": {
+    "User": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "email": {"type": "string", "unique": true, "indexed": true},
+        "username": {"type": "string", "unique": true, "indexed": true},
+        "full_name": {"type": "string", "nullable": true},
+        "password_hash": {"type": "string"},
+        "role": {"type": "enum", "values": ["admin", "staff", "student"]},
+        "is_active": {"type": "boolean", "default": true},
+        "is_superuser": {"type": "boolean", "default": false}
+      },
+      "relationships": {
+        "student": {"type": "one_to_one", "entity": "Student", "back_populates": "user"},
+        "staff": {"type": "one_to_one", "entity": "Staff", "back_populates": "user"},
+        "audit_logs": {"type": "one_to_many", "entity": "AuditLog", "back_populates": "user"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Student": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "user_id": {"type": "uuid", "foreign_key": "User.id", "unique": true},
+        "enrollment_number": {"type": "string", "unique": true},
+        "date_of_birth": {"type": "date"},
+        "address": {"type": "text", "nullable": true},
+        "personal_info": {"type": "json", "nullable": true},
+        "enrollment_year": {"type": "string", "length": 4},
+        "current_semester": {"type": "string", "length": 2, "nullable": true}
+      },
+      "relationships": {
+        "user": {"type": "one_to_one", "entity": "User", "back_populates": "student"},
+        "enrollments": {"type": "one_to_many", "entity": "Enrollment", "back_populates": "student"},
+        "grades": {"type": "one_to_many", "entity": "Grade", "back_populates": "student"},
+        "attendance": {"type": "one_to_many", "entity": "Attendance", "back_populates": "student"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Staff": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "user_id": {"type": "uuid", "foreign_key": "User.id", "unique": true},
+        "employee_id": {"type": "string", "unique": true},
+        "department": {"type": "string"},
+        "designation": {"type": "string"},
+        "date_of_joining": {"type": "date"},
+        "qualifications": {"type": "json", "nullable": true}
+      },
+      "relationships": {
+        "user": {"type": "one_to_one", "entity": "User", "back_populates": "staff"},
+        "grades": {"type": "one_to_many", "entity": "Grade", "back_populates": "staff"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Enrollment": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "student_id": {"type": "uuid", "foreign_key": "Student.id"},
+        "course_code": {"type": "string"},
+        "semester": {"type": "string", "length": 2},
+        "academic_year": {"type": "string", "length": 4},
+        "status": {
+          "type": "enum",
+          "values": ["pending", "active", "completed", "withdrawn"],
+          "default": "pending"
+        }
+      },
+      "relationships": {
+        "student": {"type": "many_to_one", "entity": "Student", "back_populates": "enrollments"},
+        "grades": {"type": "one_to_many", "entity": "Grade", "back_populates": "enrollment"},
+        "attendance": {"type": "one_to_many", "entity": "Attendance", "back_populates": "enrollment"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Grade": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "student_id": {"type": "uuid", "foreign_key": "Student.id"},
+        "staff_id": {"type": "uuid", "foreign_key": "Staff.id"},
+        "enrollment_id": {"type": "uuid", "foreign_key": "Enrollment.id"},
+        "grade_value": {"type": "float"},
+        "max_grade": {"type": "float", "default": 100.0},
+        "remarks": {"type": "string", "nullable": true}
+      },
+      "relationships": {
+        "student": {"type": "many_to_one", "entity": "Student", "back_populates": "grades"},
+        "staff": {"type": "many_to_one", "entity": "Staff", "back_populates": "grades"},
+        "enrollment": {"type": "many_to_one", "entity": "Enrollment", "back_populates": "grades"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Attendance": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "student_id": {"type": "uuid", "foreign_key": "Student.id"},
+        "enrollment_id": {"type": "uuid", "foreign_key": "Enrollment.id"},
+        "date": {"type": "date"},
+        "is_present": {"type": "boolean", "default": false},
+        "remarks": {"type": "string", "nullable": true}
+      },
+      "relationships": {
+        "student": {"type": "many_to_one", "entity": "Student", "back_populates": "attendance"},
+        "enrollment": {"type": "many_to_one", "entity": "Enrollment", "back_populates": "attendance"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "News": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "title": {"type": "string"},
+        "content": {"type": "text"},
+        "category": {
+          "type": "enum",
+          "values": ["academic", "administrative", "events", "general"]
+        },
+        "published_at": {"type": "datetime"},
+        "author_id": {"type": "uuid", "foreign_key": "User.id"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Event": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "title": {"type": "string"},
+        "description": {"type": "text"},
+        "start_time": {"type": "datetime"},
+        "end_time": {"type": "datetime"},
+        "location": {"type": "string", "nullable": true},
+        "status": {
+          "type": "enum",
+          "values": ["scheduled", "ongoing", "completed", "cancelled"],
+          "default": "scheduled"
+        },
+        "organizer_id": {"type": "uuid", "foreign_key": "User.id"}
+      },
+      "relationships": {
+        "registrations": {"type": "one_to_many", "entity": "Registration", "back_populates": "event"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Registration": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "event_id": {"type": "uuid", "foreign_key": "Event.id"},
+        "user_id": {"type": "uuid", "foreign_key": "User.id"},
+        "attended": {"type": "boolean", "default": false},
+        "feedback": {"type": "string", "nullable": true}
+      },
+      "relationships": {
+        "event": {"type": "many_to_one", "entity": "Event", "back_populates": "registrations"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Dashboard": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "user_id": {"type": "uuid", "foreign_key": "User.id"},
+        "title": {"type": "string"},
+        "layout": {"type": "json", "nullable": true},
+        "widgets": {"type": "json", "nullable": true},
+        "is_default": {"type": "boolean", "default": false}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "Report": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "title": {"type": "string"},
+        "description": {"type": "string", "nullable": true},
+        "report_type": {"type": "string"},
+        "parameters": {"type": "json", "nullable": true},
+        "result_data": {"type": "json", "nullable": true},
+        "generated_by": {"type": "uuid", "foreign_key": "User.id"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    },
+    "AuditLog": {
+      "fields": {
+        "id": {"type": "uuid", "primary_key": true},
+        "user_id": {"type": "uuid", "foreign_key": "User.id"},
+        "action": {"type": "string"},
+        "entity_type": {"type": "string"},
+        "entity_id": {"type": "string"},
+        "changes": {"type": "json", "nullable": true},
+        "ip_address": {"type": "string", "nullable": true},
+        "user_agent": {"type": "string", "nullable": true},
+        "details": {"type": "text", "nullable": true}
+      },
+      "relationships": {
+        "user": {"type": "many_to_one", "entity": "User", "back_populates": "audit_logs"}
+      },
+      "timestamps": ["created_at", "updated_at"]
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "description": "Complete entity schema for College Portal database",
+    "timestamp": "2024-02-13T00:00:00Z",
+    "common_fields": {
+      "id": "UUID primary key, auto-generated",
+      "created_at": "Timestamp of record creation",
+      "updated_at": "Timestamp of last update"
+    }
+  }
+}
