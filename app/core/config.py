@@ -24,22 +24,56 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # Database Configuration
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    # Support both standard DB_* and legacy POSTGRES_* environment variables
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[int] = 5432
+    DB_USER: Optional[str] = None
+    DB_PASS: Optional[str] = None
+    DB_NAME: Optional[str] = None
+    
+    # Legacy variables (maintained for backward compatibility)
+    POSTGRES_SERVER: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_DB: Optional[str] = None
+    
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
+            
+        # Get host from DB_HOST or fall back to POSTGRES_SERVER
+        host = values.get("DB_HOST") or values.get("POSTGRES_SERVER")
+        if not host:
+            raise ValueError("Database host must be specified via DB_HOST or POSTGRES_SERVER")
+            
+        # Get user from DB_USER or fall back to POSTGRES_USER
+        user = values.get("DB_USER") or values.get("POSTGRES_USER")
+        if not user:
+            raise ValueError("Database user must be specified via DB_USER or POSTGRES_USER")
+            
+        # Get password from DB_PASS or fall back to POSTGRES_PASSWORD
+        password = values.get("DB_PASS") or values.get("POSTGRES_PASSWORD")
+        if not password:
+            raise ValueError("Database password must be specified via DB_PASS or POSTGRES_PASSWORD")
+            
+        # Get database name from DB_NAME or fall back to POSTGRES_DB
+        db_name = values.get("DB_NAME") or values.get("POSTGRES_DB")
+        if not db_name:
+            raise ValueError("Database name must be specified via DB_NAME or POSTGRES_DB")
+            
+        # Get port from DB_PORT (defaults to 5432 if not specified)
+        port = str(values.get("DB_PORT", 5432))
+        
         return PostgresDsn.build(
             scheme="postgresql",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+            path=f"/{db_name}",
         )
 
     class Config:

@@ -55,10 +55,18 @@ ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # Database configuration
-POSTGRES_SERVER="localhost"
-POSTGRES_USER="your_db_user"
-POSTGRES_PASSWORD="your_db_password"
-POSTGRES_DB="college_portal"
+# You can use either the standard DB_* variables:
+DB_HOST="localhost"
+DB_PORT=5432  # Optional, defaults to 5432
+DB_USER="your_db_user"
+DB_PASS="your_db_password"
+DB_NAME="college_portal"
+
+# Or the legacy POSTGRES_* variables (maintained for backward compatibility):
+# POSTGRES_SERVER="localhost"
+# POSTGRES_USER="your_db_user"
+# POSTGRES_PASSWORD="your_db_password"
+# POSTGRES_DB="college_portal"
 
 # CORS Settings (comma-separated list of origins)
 BACKEND_CORS_ORIGINS="http://localhost,http://localhost:8080,http://localhost:3000"
