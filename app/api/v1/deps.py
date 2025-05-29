@@ -39,6 +39,7 @@ def get_db() -> Generator:
 
 # PUBLIC_INTERFACE
 def get_current_user(
+    request: Request,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> User:
@@ -61,6 +62,9 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
+
+    # Store user in request state for middleware access
+    request.state.user = user
     return user
 
 # PUBLIC_INTERFACE
