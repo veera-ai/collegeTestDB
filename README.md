@@ -159,4 +159,4 @@ app/
 - Regularly rotate JWT secrets
 - Keep dependencies updated
 - Monitor audit logs
-- Follow security best practices for PostgreSQL
+- Follow security best practices for MySQL
