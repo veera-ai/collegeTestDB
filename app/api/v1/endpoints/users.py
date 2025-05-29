@@ -1,14 +1,15 @@
 """User management endpoints."""
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import (
     get_db,
     get_current_active_superuser,
-    get_current_active_user
+    get_current_active_user,
+    get_request
 )
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
@@ -17,6 +18,7 @@ from app.schemas.user import (
     UserCreate,
     UserUpdate
 )
+from app.services.audit import audit_service
 
 router = APIRouter()
 
@@ -27,9 +29,21 @@ def get_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_active_superuser),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Get list of users."""
     users = db.query(User).offset(skip).limit(limit).all()
+    
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="list",
+        entity_type="user",
+        entity_id="all",
+        request=request,
+        details=f"User list retrieved by {current_user.username}"
+    )
+    
     return users
 
 # PUBLIC_INTERFACE
@@ -39,6 +53,7 @@ def create_user(
     db: Session = Depends(get_db),
     user_in: UserCreate,
     current_user: User = Depends(get_current_active_superuser),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Create new user."""
     user = db.query(User).filter(User.email == user_in.email).first()
@@ -66,6 +81,19 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Log user creation
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="create",
+        entity_type="user",
+        entity_id=str(user.id),
+        changes=user_in.dict(exclude={"password"}),
+        request=request,
+        details=f"User {user.username} created by {current_user.username}"
+    )
+    
     return user
 
 # PUBLIC_INTERFACE
@@ -85,16 +113,22 @@ def update_current_user(
     full_name: Optional[str] = Body(None),
     email: Optional[str] = Body(None),
     current_user: User = Depends(get_current_active_user),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Update current user."""
     current_user_data = jsonable_encoder(current_user)
     user_in = UserUpdate(**current_user_data)
+    
+    changes = {}
     if password is not None:
         user_in.password = password
+        changes["password"] = "updated"
     if full_name is not None:
         user_in.full_name = full_name
+        changes["full_name"] = full_name
     if email is not None:
         user_in.email = email
+        changes["email"] = email
     
     if email is not None:
         user = db.query(User).filter(
@@ -115,6 +149,19 @@ def update_current_user(
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
+    
+    # Log user self-update
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="update",
+        entity_type="user",
+        entity_id=str(current_user.id),
+        changes=changes,
+        request=request,
+        details=f"User {current_user.username} updated their own profile"
+    )
+    
     return current_user
 
 # PUBLIC_INTERFACE
@@ -123,6 +170,7 @@ def get_user_by_id(
     user_id: str,
     current_user: User = Depends(get_current_active_superuser),
     db: Session = Depends(get_db),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Get user by ID."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -131,6 +179,17 @@ def get_user_by_id(
             status_code=404,
             detail="User not found",
         )
+    
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="read",
+        entity_type="user",
+        entity_id=user_id,
+        request=request,
+        details=f"User {user.username} details retrieved by {current_user.username}"
+    )
+    
     return user
 
 # PUBLIC_INTERFACE
@@ -141,6 +200,7 @@ def update_user(
     user_id: str,
     user_in: UserUpdate,
     current_user: User = Depends(get_current_active_superuser),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Update user."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -149,6 +209,10 @@ def update_user(
             status_code=404,
             detail="User not found",
         )
+    
+    changes = user_in.dict(exclude_unset=True)
+    if "password" in changes:
+        changes["password"] = "updated"
     
     if user_in.email is not None:
         user_with_email = db.query(User).filter(
@@ -184,6 +248,19 @@ def update_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Log user update
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="update",
+        entity_type="user",
+        entity_id=user_id,
+        changes=changes,
+        request=request,
+        details=f"User {user.username} updated by {current_user.username}"
+    )
+    
     return user
 
 # PUBLIC_INTERFACE
@@ -193,6 +270,7 @@ def delete_user(
     db: Session = Depends(get_db),
     user_id: str,
     current_user: User = Depends(get_current_active_superuser),
+    request: Request = Depends(get_request),
 ) -> Any:
     """Delete user."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -201,6 +279,20 @@ def delete_user(
             status_code=404,
             detail="User not found",
         )
+    
+    username = user.username
     db.delete(user)
     db.commit()
+    
+    # Log user deletion
+    audit_service.log_activity(
+        db=db,
+        user=current_user,
+        action="delete",
+        entity_type="user",
+        entity_id=user_id,
+        request=request,
+        details=f"User {username} deleted by {current_user.username}"
+    )
+    
     return user
