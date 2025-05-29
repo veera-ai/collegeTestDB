@@ -10,22 +10,22 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
 
-# Configure connection pool
+# Configure connection pool using settings
 engine_args = {
     "pool_pre_ping": True,  # Enable connection health checks
-    "pool_size": 5,  # Default pool size
-    "max_overflow": 10,  # Maximum number of connections to exceed pool_size
-    "pool_timeout": 30,  # Timeout for getting connection from pool
-    "pool_recycle": 1800,  # Recycle connections after 30 minutes
+    "pool_size": settings.DB_POOL_SIZE,
+    "max_overflow": settings.DB_MAX_OVERFLOW,
+    "pool_timeout": settings.DB_POOL_TIMEOUT,
+    "pool_recycle": settings.DB_POOL_RECYCLE,
 }
 
-# Add SSL configuration if specified in settings
-if getattr(settings, "DB_USE_SSL", False):
+# Add SSL configuration if enabled
+if settings.DB_USE_SSL:
     engine_args["connect_args"] = {
-        "sslmode": getattr(settings, "DB_SSL_MODE", "verify-full"),
-        "sslcert": getattr(settings, "DB_SSL_CERT", None),
-        "sslkey": getattr(settings, "DB_SSL_KEY", None),
-        "sslrootcert": getattr(settings, "DB_SSL_ROOT_CERT", None),
+        "sslmode": settings.DB_SSL_MODE,
+        "sslcert": settings.DB_SSL_CERT,
+        "sslkey": settings.DB_SSL_KEY,
+        "sslrootcert": settings.DB_SSL_ROOT_CERT,
     }
     # Remove None values
     engine_args["connect_args"] = {k: v for k, v in engine_args["connect_args"].items() if v is not None}
