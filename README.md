@@ -55,18 +55,18 @@ ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # Database configuration
-# You can use either the standard DB_* variables:
+# Primary database connection variables:
 DB_HOST="localhost"
-DB_PORT=5432  # Optional, defaults to 5432
+DB_PORT=3306  # Optional, defaults to 3306 for MySQL
 DB_USER="your_db_user"
 DB_PASS="your_db_password"
 DB_NAME="college_portal"
 
-# Or the legacy POSTGRES_* variables (maintained for backward compatibility):
-# POSTGRES_SERVER="localhost"
-# POSTGRES_USER="your_db_user"
-# POSTGRES_PASSWORD="your_db_password"
-# POSTGRES_DB="college_portal"
+# Legacy variables (maintained for backward compatibility):
+# POSTGRES_SERVER="localhost"  # Will be used as fallback for DB_HOST
+# POSTGRES_USER="your_db_user"  # Will be used as fallback for DB_USER
+# POSTGRES_PASSWORD="your_db_password"  # Will be used as fallback for DB_PASS
+# POSTGRES_DB="college_portal"  # Will be used as fallback for DB_NAME
 
 # CORS Settings (comma-separated list of origins)
 BACKEND_CORS_ORIGINS="http://localhost,http://localhost:8080,http://localhost:3000"
@@ -136,9 +136,10 @@ app/
 ## Troubleshooting
 
 1. Database Connection Issues:
-   - Verify PostgreSQL is running
+   - Verify MySQL is running
    - Check database credentials in `.env`
    - Ensure database exists and user has proper permissions
+   - Check MySQL connection timeout settings if experiencing intermittent disconnects
 
 2. API Access Issues:
    - Verify JWT token is valid
