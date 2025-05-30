@@ -9,10 +9,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # BACKEND_CORS_ORIGINS is a comma-separated list of origins
-    BACKEND_CORS_ORIGINS: List[str] =   [
+    BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost",
         "http://localhost:8080",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "http://127.0.0.1:8001"
     ]
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)

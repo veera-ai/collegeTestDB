@@ -10,10 +10,12 @@ from app.api.v1.deps import get_db, get_current_user, get_request
 from app.core import security
 from app.core.config import settings
 from app.models.user import User
-from app.schemas.user import User as UserSchema
+from app.schemas.user import User as UserSchema, UserCreate
 from app.schemas.token import Token
 from app.services.audit import audit_service
 from app.schemas.responses import HTTPError, HTTPValidationError
+from app.core.security import get_password_hash
+from app.models.user import UserRole
 
 router = APIRouter()
 
@@ -206,3 +208,53 @@ def test_token(
         details=f"Token test performed by user: {current_user.username}"
     )
     return current_user
+
+@router.post(
+    "/register",
+    response_model=Token,
+    status_code=201,
+    responses={
+        201: {"description": "User registered successfully"},
+        400: {"description": "User already exists"}
+    }
+)
+def register(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    request: Request = None
+) -> Any:
+    """
+    Public endpoint to register a new user (self-signup).
+    """
+    # Check if user already exists
+    if db.query(User).filter((User.email == user_in.email) | (User.username == user_in.username)).first():
+        raise HTTPException(status_code=400, detail="User with this email or username already exists")
+    user = User(
+        email=user_in.email,
+        username=user_in.username,
+        full_name=user_in.full_name,
+        password_hash=get_password_hash(user_in.password),
+        role=UserRole.STUDENT,
+        is_active=True,
+        is_superuser=False
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    audit_service.log_activity(
+        db=db,
+        user=user,
+        action="register",
+        entity_type="user",
+        entity_id=str(user.id),
+        request=request,
+        details=f"User registered: {user.username}"
+    )
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
